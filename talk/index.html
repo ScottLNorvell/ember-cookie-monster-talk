@@ -1,7 +1,7 @@
 <!doctype html>
 <html>
   <head>
-    <title>CNE Bootstrap Talk using Bespoke</title>
+    <title>Ember Testing Talk</title>
     <link href='http://fonts.googleapis.com/css?family=Lato:100,400,900' rel='stylesheet' type='text/css'>
     <link rel="stylesheet" href="talk.css">
     <!-- See folder for all the sweet styles available! -->
@@ -24,60 +24,289 @@
   </head>
   <body>
     <article id="talk" class="slides">
+      <!-- TITLE SLIDE -->
       <section class="slide" data-bespoke-state="is-title">
         <inner>
-          <h2 class="slide__title">Hello World</h2>
-          <img src="https://www.dropbox.com/s/hzpw00eu6zxuyen/ready-to-paaaaarty.gif?dl=1" alt="" class="slide__image">
-          <p class="slide__copy"><code class="special">Press spacebar to continue</code></p>
+          <h2 class="slide__title">Ember Testing</h2>
+          <img src="images/testing_funny.gif" alt="" class="slide__image">
         </inner>
       </section>
-      <section class="slide">
+      <section class="slide" data-bespoke-state="is-section">
         <inner>
-          <h2 class="slide__title">Another slide here as an example</h2>
-          <img src="http://placehold.it/470x350&text=with+an+example+image" alt="" class="slide__image">
-          <p class="slide__copy"><code class="special">Or use the arrow keys &larr; &rarr;</code></p>
+          <h2 class="slide__title">Why it didn't work</h2>
+          <p class="slide__copy">(and what we did to fix it)</p>
+          <ul class="slide__list">
+            <li class="slide__list__item">
+              <i class="cne-icon--check"></i>
+              <span>REFACTOR TO JS!!!</span>
+            </li>
+            <li class="slide__list__item">
+              <i class="cne-icon--check"></i>
+              <span>App.create() =&gt; App.extend()</span>
+            </li>
+            <li class="slide__list__item">
+              <i class="cne-icon--check"></i>
+              <span>start-app.js.erb</span>
+            </li>
+          </ul>
         </inner>
       </section>
+      <!-- APPCREATE V APPEXTEND -->
       <section class="slide">
         <inner>
-          <h2 class="slide__title">A slide with some code!</h2>
-          <pre><code class="javascript">// file/path/slide_code.js
-
-function() {
-  var slides = 'awesome!';
-  this.makesPresenting('a breeze');
-  /slide[s]?/.test('This is a great slide presentation!');
-}
+          <h2 class="slide__title">App.create() =&gt; App.extend()</h2>
+          <h3 class="slide__copy">Instead of this:</h3>
+          <pre><code class="javascript">// app/assets/javascripts/Vidz.js
+window.Vidz = Ember.Application.create({
+  aVariable: "that shouldn't be directly on vidz",
+  aConstant: "that can't be overridden during testing"
+});
           </code></pre>
         </inner>
       </section>
       <section class="slide">
         <inner>
-          <h2 class="slide__title">Just put your code into something like this:</h2>
-          <pre><code class="html">
-&lt;pre&gt;&lt;code class="javascript"&gt;
-function mySweetCode() {
-  return 'yay!';
+          <h2 class="slide__title">App.create() =&gt; App.extend()</h2>
+          <h3 class="slide__copy">do this:</h3>
+          <pre><code class="javascript">// app/assets/javascripts/Vidz.js
+window.Vidz = Ember.Application.extend();
+// app/assets/javascripts/start-app.js (pseudo code)
+if (prod) {
+  configObject = prodConfigObject;
+} else if (test) {
+  configObject = testConfigObject;
 }
-&lt;/code&gt;&lt;/pre&gt;
+window.VidzApp = window.Vidz.create(configObject);
+// SHOW da code!
+          </code></pre>
+        </inner>
+      </section>
+      <!-- APPCREATE V APPEXTEND -->
+      <section class="slide">
+        <inner>
+          <h2 class="slide__title">App.create() =&gt; App.extend()</h2>
+          <h3 class="slide__copy">And we can create and destroy the app for each test:</h3>
+          <pre><code class="javascript">// test/javascripts/acceptance/feature-test.js
+module('Acceptance - feature acceptance test', {
+  setup: function() {
+    // startApp calls create on app with testConfigObject
+    App = startApp();
+  },
+  teardown: function() {
+    // destroy after every test
+    Ember.run(App, 'destroy');
+  }
+});
+          </code></pre>
+        </inner>
+      </section>
+      <section class="slide">
+        <inner>
+          <h2 class="slide__title">App.create() =&gt; App.extend()</h2>
+          <h3 class="slide__copy">Better yet for unit tests:</h3>
+          <pre><code class="javascript">// test/javascripts/unit/feature-test.js
+module('Unit - feature acceptance test', {
+  setup: function() {
+    // don't start the app and ONLY test this unit
+  },
+  teardown: function() {
+    // nothing to destroy
+  }
+});
+          </code></pre>
+        </inner>
+      </section>
+      <section class="slide">
+        <inner>
+          <h2 class="slide__title">Now just follow the guides</h2>
+          <p class="slide__copy">http://emberjs.com/guides/testing/</p>
+          <img src="images/outta-here.gif" alt="" class="slide__image">
+        </inner>
+      </section>
+      <section class="slide">
+        <inner>
+          <h2 class="slide__title">Instead of this:</h2>
+          <pre><code class="javascript">// test/javascripts/acceptance/feature-test.js
+test('it works when you do a bunch of async stuff', {
+  click('.a-button');
+  andThen(funciton() {
+    fillIn('.a-form', 'NAME');
+    andThen(function() {
+      doCustomAsyncHelper('.a-glider');
+      andThen(function() {
+        // make your assertion
+        ok(this.works, 'this works');
+      })
+    })
+  })
+});
+          </code></pre>
+        </inner>
+      </section>
+      <section class="slide">
+        <inner>
+          <h2 class="slide__title">Do this:</h2>
+          <pre><code class="javascript">// test/javascripts/acceptance/feature-test.js
+test('it works when you do a bunch of async stuff', {
+  click('.a-button');
+  fillIn('.a-form', 'NAME');
+  doCustomAsyncHelper('.a-glider');
+  andThen(functon() {
+    // make your assertion
+    // `andThen` knows to wait!
+    ok(this.works, 'this works');
+  })
+});
+          </code></pre>
+        </inner>
+      </section>
+      <section class="slide">
+        <inner>
+          <h2 class="slide__title">A really simple unit Test:</h2>
+          <pre><code class="javascript">
+;(function () {
+  moduleFor('route:channel', 'ChannelRoute Test');
+
+  test('#model fetches single channel', function() {
+    var channel_key = 'sweet-channel';
+    var channel = { key_name: channel_key };
+    Vidz.DS.store('channel', channel_key, channel);
+    var model = this.subject().model({ channel_key: channel_key });
+    equal(model, channel, 'model is the channel from the store');
+  });
+})();
+          </code></pre>
+        </inner>
+      </section>
+      <section class="slide">
+        <inner>
+          <h2 class="slide__title">A simple component unit Test:</h2>
+          <pre><code class="javascript">
+(function() {
+  moduleForComponent('coffin-link', 'CoffinLinkComponent');
+
+  test('#_transitionRoute return array for complex trans', function() {
+    var component = this.subject({
+      transitionRoute: 'playlists.show/sweet-playlist'
+    });
+    equal(
+      component.get('_transitionRoute').toString(),
+      ['playlists.show', 'sweet-playlist'].toString(),
+      '_transitionRoute returns an array split on / for complex routes'
+    );
+    ok(
+      (component.get('_transitionRoute') instanceof Array),
+      'complex transitionRoute returns array'
+    );
+  });
+})();
+          </code></pre>
+        </inner>
+      </section>
+      <section class="slide">
+        <inner>
+          <h2 class="slide__title">A helpful pattern:</h2>
+          <pre><code class="javascript">
+  test('closeAndTransition sends the transition route', function() {
+    // use expect because if sendAction never called,
+    // the test passes anyway
+    expect(1);
+    var transitionRoute = 'playlists';
+    var component = this.subject({
+      transitionRoute: transitionRoute,
+      sendAction: function(arg1, transitionRouteArg) {
+        // stub sendAction to see if arguments get called properly
+        equal(
+          transitionRouteArg,
+          transitionRoute,
+          '_transitionRoute sent with action!'
+        );
+      }
+    });
+    component.send('closeAndTransition');
+  });
+          </code></pre>
+        </inner>
+      </section>
+      <section class="slide">
+        <inner>
+          <h2 class="slide__title">A simple controller test:</h2>
+          <pre><code class="javascript">
+(function () {
+  moduleFor('controller:playlists-index', 'PlaylistsIndexController Test');
+
+  test('computed properties on content work', function() {
+    var controller = this.subject({model: [0,1,2,3,4,5]});
+    equal(
+      controller.get('featuredPlaylists').toString(),
+      '0,1,2',
+      'featuredPlaylists returns the top 3 playlists'
+    );
+    equal(
+      controller.get('otherPlaylists').toString(),
+      '3,4,5',
+      'otherPlaylists returns the rest of the playlists'
+    );
+  });
+
+})();
+          </code></pre>
+        </inner>
+      </section>
+      <section class="slide">
+        <inner>
+          <h2 class="slide__title">Oops I lied a little.</h2>
+          <p class="slide__copy">We have a custom data layer, so `moduleFor('model')` doesn't work :(</p>
+          <img src="images/i-lied.jpg" alt="" class="slide__image">
+        </inner>
+      </section>
+      <section class="slide">
+        <inner>
+          <h2 class="slide__title">Try this instead:</h2>
+          <pre><code class="javascript">
+(function () {
+  module('Video Model Test');
+
+  test('#channel returns associated channel', function() {
+    var channel_key = 'sweet-channel';
+    var channel = { key_name: channel_key };
+    Vidz.DS.store('channel', channel_key, channel);
+
+    var video = Vidz.Video.create({
+      id: 1,
+      slug: 'sweet-video',
+      channel_key: channel_key
+    });
+    equal(
+      video.get('channel'),
+      channel,
+      '#channel returns associated channel'
+    );
+  });
+
+})();
           </code></pre>
         </inner>
       </section>
       <section class="slide" data-bespoke-state="is-section">
         <inner>
-          <img src="http://placehold.it/800x100&text=A+slide+with+a+list+and+an+image+for+a+header" alt="" class="slide__image">
+          <h2 class="slide__title">Where do we go from here</h2>
           <ul class="slide__list">
             <li class="slide__list__item">
               <i class="cne-icon--check"></i>
-              <span>A simple</span>
+              <span>REFACTOR TO JS!!!</span>
             </li>
             <li class="slide__list__item">
               <i class="cne-icon--check"></i>
-              <span>delayed</span>
+              <span>Write more tests</span>
             </li>
             <li class="slide__list__item">
               <i class="cne-icon--check"></i>
-              <span>list</span>
+              <span>Speed up test runner (guard?)</span>
+            </li>
+            <li class="slide__list__item">
+              <i class="cne-icon--check"></i>
+              <span>Suggestions? Questions?</span>
             </li>
           </ul>
         </inner>
@@ -85,8 +314,8 @@ function mySweetCode() {
       <section class="slide">
         <inner>
           <h2 class="slide__title">The End</h2>
-          <p class="slide__copy"><code class="special">And the whole slide deck loops.</code></p>
-          <i class="cne-icon--thescene"></i>
+          <p class="slide__copy">Go write tests!</p>
+          <img src="images/excuses.gif" alt="" class="slide__image">
         </inner>
       </section>
     </article>

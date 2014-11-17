@@ -113,14 +113,19 @@
   text-transform: uppercase;
 }
 
-.slide__list__item--code {
-  text-transform: none;
-}
-
 .slide__list__item .cne-icon--check,
 .slide__list__item b {
   float: left;
   margin-right: 20px;
+}
+
+.slide__list__item span {
+  overflow: hidden;
+  display: block;
+}
+
+.slide__list__item code {
+  text-transform: none;
 }
 
 code.special {
@@ -136,7 +141,3 @@ code.special:after {
   content: ']';
 }
 
-.slide__list__item span {
-  overflow: hidden;
-  display: block;
-}
