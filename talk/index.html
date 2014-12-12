@@ -37,6 +37,7 @@
           <h2 class="slide__title">Why?</h2>
           <p class="slide__copy">Check out this file</p>
           <pre><code class="javascript">// vidz/app/assets/javascripts/lib/segment.io.stubs.js
+
 window.analytics = window.analytics || [];
 
 window.analytics.methods = ['identify', 'group', 'track',
@@ -61,31 +62,310 @@ for (var i = 0; i < window.analytics.methods.length; i++) {
       </section>
       <section class="slide" data-bespoke-state="is-section">
         <inner>
-          <h2 class="slide__title">Where do we go from here</h2>
-          <ul class="slide__list">
-            <li class="slide__list__item">
-              <i class="cne-icon--check"></i>
-              <span>REFACTOR TO JS!!!</span>
-            </li>
-            <li class="slide__list__item">
-              <i class="cne-icon--check"></i>
-              <span>Write more tests</span>
-            </li>
-            <li class="slide__list__item">
-              <i class="cne-icon--check"></i>
-              <span>Speed up test runner (guard?)</span>
-            </li>
-            <li class="slide__list__item">
-              <i class="cne-icon--check"></i>
-              <span>Suggestions? Questions?</span>
-            </li>
-          </ul>
+          <h2 class="slide__title">Public Api</h2>
+          <img src="images/pub-api.png" alt="" class="slide__image">
+        </inner>
+      </section>
+      <section class="slide" data-bespoke-state="is-section">
+        <inner>
+          <h2 class="slide__title">#callMethod</h2>
+          <pre><code class="javascript">// services/stubber.js
+
+callMethod: function(providerName, method, args) {
+  /*
+    README: this is where all of the error handling occurs
+              - if method $nin methods
+              - if provider $nin providers, etc
+    I.E. don't use _methods!
+  */
+  var provider = this.providers[providerName];
+  if (!provider) {
+    Ember.debug('No provider registered for ' + providerName + '. Use stubber#registerProvider to register' + providerName +'.');
+    return;
+  } else if (provider.availableMethods.indexOf(method) < 0) {
+    Ember.debug('#' + method + 'method not available for ' + providerName + '.')
+    return;
+  }
+
+  if (provider.loadedObject == null) {
+    provider.queuedActions.push({
+      method: method,
+      args: args
+    });
+  } else {
+    this._callMethod(providerName, method, args);
+  }
+},
+          </code></pre>
+        </inner>
+      </section>
+      <section class="slide" data-bespoke-state="is-section">
+        <inner>
+          <h2 class="slide__title">#registerProvider</h2>
+          <pre><code class="javascript">// services/stubber.js
+
+registerProvider: function(providerName, methods) {
+  if (typeof methods === 'string') {
+    methods = [methods];
+  }
+  if (this.providers[providerName]) {
+    throw "StubberService provider " + providerName + " already registered."
+  } else {
+    this.providers[providerName] = {
+      availableMethods: methods,
+      loadedObject: null,
+      queuedActions: Ember.A()
+    };
+  }
+},
+          </code></pre>
+        </inner>
+      </section>
+      <section class="slide" data-bespoke-state="is-section">
+        <inner>
+          <h2 class="slide__title">#loadProvider</h2>
+          <pre><code class="javascript">// services/stubber.js
+
+loadProvider: function(providerName, loadedObject) {
+  if (this.providers[providerName]) {
+    this.providers[providerName].loadedObject = loadedObject;
+    this._processQueue(providerName);
+  } else {
+    Ember.debug('No provider registered for ' +
+      providerName +
+      '. Use stubber#registerProvider to register' +
+      providerName + '.'
+    );
+  }
+},
+          </code></pre>
+        </inner>
+      </section>
+      <section class="slide" data-bespoke-state="is-section">
+        <inner>
+          <h2 class="slide__title">Behind The Scene</h2>
+          <img src="images/bts.jpg" alt="" class="slide__image">
+        </inner>
+      </section>
+      <section class="slide" data-bespoke-state="is-section">
+        <inner>
+          <h2 class="slide__title">#_processQueue</h2>
+          <pre><code class="javascript">// services/stubber.js
+
+// triggered by `loadProvider`.
+// Walks the queue and calls the methods.
+_processQueue: function(providerName) {
+  var queuedActions = this.providers[providerName].queuedActions;
+  if (Ember.isEmpty(queuedActions)) return
+
+  for (var i = 0, len = queuedActions.length; i < len; i++) {
+    var action = queuedActions.shift();
+    this._callMethod(providerName, action.method, action.args);
+  }
+}
+          </code></pre>
+        </inner>
+      </section>
+      <section class="slide" data-bespoke-state="is-section">
+        <inner>
+          <h2 class="slide__title">#_callMethod</h2>
+          <pre><code class="javascript">// services/stubber.js
+
+// yay! Finally my methods get called!
+_callMethod: function(providerName, method, args) {
+  var providerObject = this.providers[providerName].loadedObject;
+  providerObject[method].apply(providerObject, args);
+},
+          </code></pre>
+        </inner>
+      </section>
+      <section class="slide">
+        <inner>
+          <h2 class="slide__title">Let's Stub Something!</h2>
+          <img src="images/in-action.jpg" alt="" class="slide__image">
+        </inner>
+      </section>
+      <section class="slide" data-bespoke-state="is-section">
+        <inner>
+          <h2 class="slide__title">Scott.js</h2>
+          <p class="slide__copy">Fred has heard some amazing things about Scott.js and INSISTS we use it on TheScene.</p>
+          <pre><code class="javascript">// util/scott.js
+
+;(function() {
+  function Scott() {
+    this.doSomethingAmazing = function() {
+      // .. 2 million lines omitted for brevity
+    }
+    this.launchRockets = function() {
+      // .. 6 million lines omitted for brevity
+    }
+    this.sendScottFiveDollars = function() {
+      // .. 20 million lines omitted for brevity
+    }
+  }
+
+  window._scott = new Scott();
+
+})();
+          </code></pre>
+        </inner>
+      </section>
+      <section class="slide" data-bespoke-state="is-section">
+        <inner>
+          <h2 class="slide__title">Make a Scott Service</h2>
+          <pre><code class="javascript">// services/scott.js
+
+;(function() {
+
+  Vidz.ScottService = Ember.Object.extend({
+    doSomethingAmazing: function() {
+      // stay tuned!
+    },
+    launchRockets: function() {
+      // stay tuned!
+    },
+    sendScottFiveDollars: function() {
+      // stay tuned!
+    }
+  });
+
+})();
+          </code></pre>
+        </inner>
+      </section>
+      <section class="slide" data-bespoke-state="is-section">
+        <inner>
+          <h2 class="slide__title">Make a Scott Initializer</h2>
+          <pre><code class="javascript">// initializers/scott.js
+
+;(function() {
+  Ember.Application.initializer({
+    name: 'scott',
+    after: ['stubber'],
+
+    initialize: function(container, application) {
+      application.register('service:scott', Vidz.ScottService);
+      application.inject('controller', 'scott', 'service:scott');
+    }
+  });
+})();
+          </code></pre>
+        </inner>
+      </section>
+      <section class="slide" data-bespoke-state="is-section">
+        <inner>
+          <h2 class="slide__title">Register Scott on init</h2>
+          <pre><code class="javascript">// services/scott.js
+
+;(function() {
+
+  Vidz.ScottService = Ember.Object.extend({
+    _registerScott: function() {
+      this.get('stubber').registerProvider('Scott', [
+        'doSomethingAmazing',
+        'launchRockets',
+        'sendScottFiveDollars'
+      ]);
+    }.on('init'),
+    doSomethingAmazing: function() {
+      // stay tuned!
+    },
+    launchRockets: function() {
+      // stay tuned!
+    },
+    sendScottFiveDollars: function() {
+      // stay tuned!
+    }
+  });
+
+})();
+          </code></pre>
+        </inner>
+      </section>
+      <section class="slide" data-bespoke-state="is-section">
+        <inner>
+          <h2 class="slide__title">Implement "Scott" Methods using Stubber</h2>
+          <pre><code class="javascript">// services/scott.js
+
+;(function() {
+
+  Vidz.ScottService = Ember.Object.extend({
+    _registerScott: function() {
+      this.get('stubber').registerProvider('Scott', [
+        'doSomethingAmazing',
+        'launchRockets',
+        'sendScottFiveDollars'
+      ]);
+    }.on('init'),
+    doSomethingAmazing: function() {
+      var stubber = this.get('stubber');
+      stubber.callMethod('Scott', 'doSomethingAmazing', arguments);
+    },
+    launchRockets: function() {
+      var stubber = this.get('stubber');
+      stubber.callMethod('Scott', 'launchRockets', arguments);
+    },
+    sendScottFiveDollars: function() {
+      var stubber = this.get('stubber');
+      stubber.callMethod('Scott', 'sendScottFiveDollars', arguments);
+    }
+  });
+
+})();
+          </code></pre>
+        </inner>
+      </section>
+      <section class="slide" data-bespoke-state="is-section">
+        <inner>
+          <h2 class="slide__title">Setup Lazy Loading</h2>
+          <pre><code class="javascript">// view/application.js
+
+_loadThirdPartyLibs: function() {
+  var view = this;
+  Ember.run.schedule('afterRender', function() {
+    var stubber = view.get('stubber');
+    // ...
+    LazyLoad.js('utils/scott.js', function() {
+      stubber.loadProvider('Scott', window._scott);
+    });
+    // ...
+  });
+},
+          </code></pre>
+        </inner>
+      </section>
+      <section class="slide" data-bespoke-state="is-section">
+        <inner>
+          <h2 class="slide__title">Reap Benefits!</h2>
+          <pre><code class="html">// templates/watch/index.js.hbs
+
+&lt;button {{action 'sendScottFiveDollars'}}&gt;SEND SCOTT FIVE DOLLARS&lt;/button&gt;
+          </code></pre>
+          <pre><code class="javascript">// controllers/watch-page.js
+
+// ...
+
+actions: {
+  sendScottFiveDollars: function() {
+    var scott = this.get('scott');
+    scott.sendScottFiveDollars();
+  }
+}
+
+// ...
+          </code></pre>
+        </inner>
+      </section>
+      <section class="slide">
+        <inner>
+          <h2 class="slide__title">This is Exactly what we do with Analytics</h2>
+          <img src="images/show-us-the-code.jpg" alt="" class="slide__image">
         </inner>
       </section>
       <section class="slide">
         <inner>
           <h2 class="slide__title">The End</h2>
-          <img src="images/excuses.gif" alt="" class="slide__image">
+          <img src="images/theend.jpg" alt="" class="slide__image">
         </inner>
       </section>
     </article>
