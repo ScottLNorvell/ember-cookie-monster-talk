@@ -1,4 +1,4 @@
-Bootstrap Talk
+Stubber Talk
 ===
 
 > Put a description here
