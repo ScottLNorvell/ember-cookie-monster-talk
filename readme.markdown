@@ -34,7 +34,7 @@ include a link to the note on the `readme.markdown` file in the `notes` director
 ---
 ##### Colophon
 
-> Put your contact information here
+> By Scott Norvell scottlnorvell@gmail.com
 
 Special thanks and appreciation:
 
