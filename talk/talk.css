@@ -81,6 +81,12 @@
   border-radius: 2px;
 }
 
+.slide__image--us {
+  width: 150px;
+  height: 150px;
+  margin: 12px auto;
+}
+
 .slide__code {
   box-sizing: border-box;
   width: 100%;
